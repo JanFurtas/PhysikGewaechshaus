@@ -29,12 +29,10 @@ int statMenuId = 0;
 int groundHumidity = 0;
 int row = 1;
 int preSave = 0;
-int preSave1 = 0;
-int preSave2 = 0;
-int preSave3 = 0;
-int preSave4 = 0;
-int selectPump = 1;
-int selectGroundHumidity = 0;
+int preSave1 = 500;
+int preSave2 = 500;
+int preSave3 = 500;
+int preSave4 = 500;
 // Watering
 int IN1 = 4;
 int IN2 = 7;
