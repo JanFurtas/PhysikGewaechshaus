@@ -29,23 +29,22 @@ int statMenuId = 0;
 int groundHumidity = 0;
 int row = 1;
 int preSave = 0;
-int preSave1 = 500;
-int preSave2 = 500;
-int preSave3 = 500;
-int preSave4 = 500;
+int preSave1 = 700;
+int preSave2 = 700;
 // Watering
 int IN1 = 4;
 int IN2 = 7;
-int IN3 = 11;
-int IN4 = 12;
-int Pin1 = A1;
-int Pin2 = A2;
-int Pin3 = A3;
-int Pin4 = A4;
+int Pin1 = A2;
+int Pin2 = A3;
 float value1 = 0;
 float value2 = 0;
-float value3 = 0;
-float value4 = 0;
+int IN4 = A4;
+float distance;
+float tankDepth = 800;
+float tankMax = 100;
+float level;
+
+
 
 
 
@@ -67,25 +66,19 @@ void setup() {
 
   // Clear the buffer
   display.clearDisplay();
-
   pinMode(IN1, OUTPUT);
   pinMode(IN2, OUTPUT);
-  pinMode(IN3, OUTPUT);
-  pinMode(IN4, OUTPUT);
   pinMode(Pin1, INPUT);
   pinMode(Pin2, INPUT);
-  pinMode(Pin3, INPUT);
-  pinMode(Pin4, INPUT);
   digitalWrite(IN1, HIGH);
   digitalWrite(IN2, HIGH);
-  digitalWrite(IN3, HIGH);
-  digitalWrite(IN4, HIGH);
-  delay(500);
 }
 
 void loop() {
   keys();
   menuSelect();
+  pumpControl();
+  waterLevel();
 }
 
 // Kontroller einstellungen
@@ -93,46 +86,40 @@ void loop() {
 void keys(){
 
   Key_read = analogRead(KeyPin);
-  if (Key_read<10) {
+  if (Key_read<110) {
     Key_id="LEFT";
     select = 0;
     preSave = 0;
+    delay(140);
   }
 
 
-  if (Key_read>140 and Key_read<150) {
+  if (Key_read>160 and Key_read<260) {
     Key_id="UP";
     if (select == 0){
-    menu_id = menu_id-1;}
+      menu_id = menu_id-1;}
     statMenuId = statMenuId-1;
-    if (menu_id == 1 and select == 1 and preSave == 0){
-      row = row-1;
-      if (row < 1) row = 4;
-      if (row > 4) row = 1;
+    if (menu_id == 1 and preSave == 0){
+      row = row-1;}
     if (row == 1 and preSave == 1){
       preSave1 = preSave1+1;
     }
     if (row == 2 and preSave == 1){
       preSave2 = preSave2+1;
     }
-    if (row == 3 and preSave == 1){
-      preSave3 = preSave3+1;
-    }
-    if (row == 4 and preSave == 1){
-      preSave4 = preSave4+1;
-    }
-  }
+    delay(140);
   }
 
-  if (Key_read>490 and Key_read<505){
+  if (Key_read>500 and Key_read<600){
      Key_id="RIGHT";
     if(menu_id == 1 and select == 1){
       preSave = 1;}
     
+    delay(140);
   }
 
 
-  if (Key_read>310 and Key_read<340) {
+  if (Key_read>330 and Key_read<420) {
     Key_id="DOWN";
     if (select == 0){
       menu_id = menu_id+1;}
@@ -140,8 +127,8 @@ void keys(){
 
     if (menu_id == 1 and select == 1 and preSave == 0){
       row = row+1;}
-    if (row < 1) row = 4;
-    if (row > 4) row = 1;
+    if (row < 1 and preSave != 0) row = 4;
+    if (row > 4 and preSave != 0) row = 1;
     if (row == 1 and preSave == 1 and preSave1>0){
       preSave1 = preSave1-1;
       if (preSave1<0) preSave1 = 0;
@@ -150,36 +137,36 @@ void keys(){
       preSave2 = preSave2-1;
       if (preSave2<0) preSave2 = 0;
     }
-    if (row == 3 and preSave == 1 and preSave3>0){
-      preSave3 = preSave3-1;
-      if (preSave3<0) preSave3 = 0;
-    }
-    if (row == 4 and preSave == 1 and preSave4>0){
-      preSave4 = preSave4-1;
-      if (preSave4<0) preSave4 = 0;
+    delay(140);
     }
     
-    }
-    
-  if (Key_read>730 and Key_read<740) {
+  if (Key_read>740 and Key_read<790) {
     Key_id="SELECT";
     select = 1;
+    delay(140);
   }
+
+  if (row>2 and preSave == 0){
+    row = 1;
+  }
+
+  if (row<1 and preSave == 0){
+    row = 2;
+  }
+
 
 
   if (menu_id < 0) menu_id=2;
   if (menu_id > 2) menu_id=0;
-  if (statMenuId <1) statMenuId=3;
-  if (statMenuId >3) statMenuId=1;
+  if (statMenuId <1) statMenuId=4;
+  if (statMenuId >4) statMenuId=1;
   if (Key_read!=Previous_Key and Key_read<1000){
     Serial.println(Key_id);
     Serial.println(menu_id);
     Serial.println(select);
     Serial.println(statMenuId);
     Serial.println(row);
-    Serial.println(selectGroundHumidity);
   }
-  delay(120);
 }
 
 // Menüs
@@ -214,7 +201,7 @@ void preSettings(){
   display.setFont(&FreeSans9pt7b);
   display.setCursor(0, 25);
   display.setTextColor(SSD1306_WHITE);
-  display.println("Modus");
+  display.println("Pumpen");
   display.display();
 }
 
@@ -229,6 +216,15 @@ void code(){
   display.display();
 }
 
+void webControl(){
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setFont(&FreeSans9pt7b);
+  display.setCursor(0, 25);
+  display.setTextColor(SSD1306_WHITE);
+  display.println("Web-Steuerung");
+  display.display();
+}
 
 
 void menuSelect(){
@@ -257,8 +253,7 @@ void stats(){
   
   value1 = analogRead(Pin1);
   value2 = analogRead(Pin2);
-  value3 = analogRead(Pin3);
-  value4 = analogRead(Pin4);
+  delay(100);
 
   switch(statMenuId){
     case 1:
@@ -278,7 +273,7 @@ void stats(){
       display.setTextColor(SSD1306_WHITE);
       display.setCursor(0, 8);
       display.setFont();
-      display.print("Temperatur: ");
+      display.println("Temperatur: ");
       display.print(temp);
       display.println("C");
       display.display();
@@ -289,11 +284,22 @@ void stats(){
       display.setTextColor(SSD1306_WHITE);
       display.setCursor(0, 8);
       display.setFont();
-      display.print("Bodenfeuchte: ");
+      display.println("Bodenfeuchtigkeit: ");
+      display.print("(1)");
       display.println(value1);
+      display.print("(2)");
       display.println(value2);
-      display.println(value3);
-      display.println(value4);
+      display.display();    
+      break;
+    case 4:
+      display.clearDisplay();
+      display.setTextSize(1);
+      display.setTextColor(SSD1306_WHITE);
+      display.setCursor(0, 8);
+      display.setFont();
+      display.println("Wasserstand: ");
+      display.print(level);
+      display.println("%");
       display.display();    
       break;
 
@@ -304,8 +310,6 @@ void stats(){
 void modes(){
   value1 = analogRead(Pin1);
   value2 = analogRead(Pin2);
-  value3 = analogRead(Pin3);
-  value4 = analogRead(Pin4);
 
 
   if (row == 1 and preSave == 0){
@@ -317,7 +321,6 @@ void modes(){
     display.println("Pumpe 1");
     display.setTextColor(SSD1306_WHITE);
     display.println("Pumpe 2");
-    display.println("Pumpe 3");
     display.display();
   }
 
@@ -330,37 +333,6 @@ void modes(){
     display.println("Pumpe 1");
     display.setTextColor(SSD1306_BLACK, SSD1306_WHITE);
     display.println("Pumpe 2");
-    display.setTextColor(SSD1306_WHITE);
-    display.println("Pumpe 3");
-    display.display();
-  }
-
-  if (row == 3 and preSave == 0){
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setTextColor(SSD1306_BLACK, SSD1306_WHITE);
-    display.setCursor(0, 8);
-    display.setFont();
-    display.setTextColor(SSD1306_WHITE);
-    display.println("Pumpe 1");
-    display.println("Pumpe 2");
-    display.setTextColor(SSD1306_BLACK, SSD1306_WHITE);
-    display.println("Pumpe 3");
-    display.setTextColor(SSD1306_WHITE);
-    display.display();
-  }
-
-  if (row == 4 and preSave == 0){
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setTextColor(SSD1306_BLACK, SSD1306_WHITE);
-    display.setCursor(0, 8);
-    display.setFont();
-    display.setTextColor(SSD1306_WHITE);
-    display.println("Pumpe 2");
-    display.println("Pumpe 3");
-    display.setTextColor(SSD1306_BLACK, SSD1306_WHITE);
-    display.println("Pumpe 4");
     display.display();
   }
 
@@ -386,53 +358,6 @@ void modes(){
     display.println(preSave2);
     display.display();  
   }
-
-  if (row == 3 and preSave == 1){
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setCursor(0, 8);
-    display.setFont();
-    display.setTextColor(SSD1306_WHITE);
-    display.println("Bodenfeuchtigkeit:");
-    display.println(preSave3);
-    display.display();  
-  }
-  
-  if (row == 4 and preSave == 1){
-    display.clearDisplay();
-    display.setTextSize(1);
-    display.setCursor(0, 8);
-    display.setFont();
-    display.setTextColor(SSD1306_WHITE);
-    display.println("Bodenfeuchtigkeit:");
-    display.println(preSave4);
-    display.display();  
-  }
-
-  if (value1 > preSave1){
-    digitalWrite(IN1, LOW);
-  }
-  else {
-    digitalWrite(IN1, HIGH);
-  }
-  if (value2 > preSave2){
-    digitalWrite(IN2, LOW);
-  }
-  else {
-    digitalWrite(IN2, HIGH);
-  }
-  if (value3 > preSave3){
-    digitalWrite(IN3, LOW);
-  }
-  else {
-    digitalWrite(IN3, HIGH);
-  }
-  if (value4 > preSave4){
-    digitalWrite(IN4, LOW);
-  }
-  else {
-    digitalWrite(IN4, HIGH);
-  }
 }
 
 void codeLink(){
@@ -447,8 +372,33 @@ void codeLink(){
   display.display();
 }
 
+void pumpControl(){
+  value1 = analogRead(Pin1);
+  value2 = analogRead(Pin2);
 
+  if (value1 > preSave1){
+    digitalWrite(IN1, LOW);
+  }
+  else {
+    digitalWrite(IN1, HIGH);
+  }
+  if (value2 > preSave2){
+    digitalWrite(IN2, LOW);
+  }
+  else {
+    digitalWrite(IN2, HIGH);
+  }
+}
 
-
-
-
+//Wasserstand
+void waterLevel(){
+  distance = analogRead(IN4);
+  level = (distance/tankDepth)*100;
+  level = 100-level;
+  if (distance>tankDepth){
+    level = 0;
+  }
+  if (distance<tankMax){
+    level = 100;
+  }
+}
